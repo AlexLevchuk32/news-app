@@ -61,7 +61,7 @@ const newsService = (function () {
 	const apiUrl = 'https://newsapi.org/v2';
 
 	return {
-		topHeadLines(country = 'ru', getNews) {
+		topHeadLines(country = 'us', getNews) {
 			http.get(
 				`${apiUrl}/top-headlines?country=${country}&category=technology&apiKey=${apiKey}`,
 				getNews,
@@ -73,7 +73,20 @@ const newsService = (function () {
 	};
 })();
 
-//  Инициализация селекторов
+// DOM-Elements
+const form = document.forms['newsControls'];
+const countrySelect = form.elements['country'];
+const searchInput = form.elements['search'];
+
+// Событие на форме
+form.addEventListener('submit', (event) => {
+	event.preventDefault();
+
+	loadNews();
+	searchInput.value = '';
+});
+
+//  Инициализация загрузки новостей
 document.addEventListener('DOMContentLoaded', function () {
 	// Инициализая библиотеки Materialize
 	M.AutoInit();
@@ -82,12 +95,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Загрузка новостей
 function loadNews() {
-	newsService.topHeadLines('us', getResponse);
+	showLoader();
+
+	const country = countrySelect.value;
+	const searchText = searchInput.value;
+
+	if (!searchText) {
+		newsService.topHeadLines(country, getResponse);
+	} else {
+		newsService.everything(searchText, getResponse);
+	}
 }
 
 // Функция calback, будет вызываться после получения ответа от сервера (новостей)
 function getResponse(error, response) {
 	// console.log(response); // articles[Array] массив объектов с новостями
+
+	removeLoader();
+
+	if (error) {
+		showAlert(error, 'error-msg');
+		return;
+	}
+
+	if (!response.articles.length) {
+		// show empty message
+		return;
+	}
 
 	renderNews(response.articles);
 }
@@ -95,6 +129,11 @@ function getResponse(error, response) {
 // Рендер новостей
 function renderNews(news) {
 	const newsContainer = document.querySelector('.news-container .row');
+
+	if (newsContainer.children.length) {
+		clearContainer(newsContainer);
+	}
+
 	let fragment = '';
 
 	news.forEach((newsItem) => {
@@ -106,6 +145,18 @@ function renderNews(news) {
 	// console.log(fragment);
 
 	newsContainer.insertAdjacentHTML('afterbegin', fragment);
+}
+
+// Очистка контейнера с новостями
+function clearContainer(container) {
+	// let child = container.lastElementChild;
+
+	// while (child) {
+	// 	container.removeChild(child);
+	// 	child = container.lastElementChild;
+	// }
+
+	container.innerHTML = '';
 }
 
 // Разметка для новостей
@@ -127,4 +178,30 @@ function newsTemplate({ urlToImage, title, url, description }) {
 			</div>
 		</div>
 	`;
+}
+
+// Обработка ошибок, вывод сообзений
+function showAlert(msg, type = 'success') {
+	M.toast({ html: msg, classes: type });
+}
+
+// Показ аниации загрузки
+function showLoader() {
+	document.body.insertAdjacentHTML(
+		'afterbegin',
+		`
+    <div class="progress">
+      <div class="indeterminate"></div>
+    </div>
+	`,
+	);
+}
+
+// Скрываем прелоадер
+function removeLoader() {
+	const loader = document.querySelector('.progress');
+
+	if (loader) {
+		loader.remove();
+	}
 }
