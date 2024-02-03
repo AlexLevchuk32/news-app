@@ -61,9 +61,9 @@ const newsService = (function () {
 	const apiUrl = 'https://newsapi.org/v2';
 
 	return {
-		topHeadLines(country = 'us', getNews) {
+		topHeadLines(country = 'us', category = 'sport', getNews) {
 			http.get(
-				`${apiUrl}/top-headlines?country=${country}&category=technology&apiKey=${apiKey}`,
+				`${apiUrl}/top-headlines?country=${country}&category=${category}&apiKey=${apiKey}`,
 				getNews,
 			);
 		},
@@ -76,6 +76,7 @@ const newsService = (function () {
 // DOM-Elements
 const form = document.forms['newsControls'];
 const countrySelect = form.elements['country'];
+const categorySelect = form.elements['category'];
 const searchInput = form.elements['search'];
 
 // Событие на форме
@@ -90,6 +91,7 @@ form.addEventListener('submit', (event) => {
 document.addEventListener('DOMContentLoaded', function () {
 	// Инициализая библиотеки Materialize
 	M.AutoInit();
+
 	loadNews();
 });
 
@@ -98,10 +100,11 @@ function loadNews() {
 	showLoader();
 
 	const country = countrySelect.value;
+	const category = categorySelect.value;
 	const searchText = searchInput.value;
 
 	if (!searchText) {
-		newsService.topHeadLines(country, getResponse);
+		newsService.topHeadLines(country, category, getResponse);
 	} else {
 		newsService.everything(searchText, getResponse);
 	}
@@ -166,7 +169,7 @@ function newsTemplate({ urlToImage, title, url, description }) {
 		<div class='col s12'>
 			<div class='card'>
 				<div class='card-image'>
-					<img src='${urlToImage || null}'>
+					<img src='${urlToImage || './img/NoImage.webp'}'>
 					<span class='card-title'>${title || ''}</span>
 				</div>
 				<div class='card-content'>
@@ -179,6 +182,10 @@ function newsTemplate({ urlToImage, title, url, description }) {
 		</div>
 	`;
 }
+
+// function newsTemplate(news) {
+// 	console.log(news);
+// }
 
 // Обработка ошибок, вывод сообзений
 function showAlert(msg, type = 'success') {
@@ -205,3 +212,17 @@ function removeLoader() {
 		loader.remove();
 	}
 }
+
+// Вывод изображения заглушки
+// function checkImg() {
+// 	const img = document.querySelectorAll('.card-image > img');
+
+// 	img.forEach((item) => {
+// 		// console.log(item.src);
+// 		// item.src = './img/NoImage.webp';
+
+// 		if (!item.src) {
+// 			item.src = './img/NoImage.webp';
+// 		}
+// 	});
+// }
